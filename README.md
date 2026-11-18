@@ -3,6 +3,8 @@
 Näytöttömän RTK-mittakepin elektroniikkakotelon ("mutteri") 3D-malli selaimessa:
 pyöritys, zoomaus ja osien näyttö (alaosa, yläosa, komponenttien tilavaraukset).
 
+Verkossa: https://maxpain12345678.github.io/mutteri-3d/
+
 Avaa paikallisesti:
 
     python3 -m http.server 8106
