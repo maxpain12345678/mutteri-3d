@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mutterikotelo 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+/* Työpajan mittapöytä: malli koko leveydellä, ohjaimet sen alla kuin mittalaitteen paneeli. */
+:root {
+  --bg: #eef1ef; --pinta: #ffffff; --viiva: #cfd6d2; --teksti: #17201d; --himmea: #5d6b66;
+  --aksentti: #c47a1c; --ala: #d39a45; --yla: #b9bdb6; --komp: #3f78b5; --nakyma: #e4e8e5;
+  --runko: "IBM Plex Sans", system-ui, sans-serif; --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111615; --pinta: #19201e; --viiva: #2c3633; --teksti: #e6ece9; --himmea: #8d9c96;
+  --aksentti: #e09a3e; --nakyma: #0c1110; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111615; --pinta: #19201e; --viiva: #2c3633; --teksti: #e6ece9; --himmea: #8d9c96;
+  --aksentti: #e09a3e; --nakyma: #0c1110; color-scheme: dark }
+body { background: var(--bg); color: var(--teksti); font: 15px/1.5 var(--runko);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px; }
+main { max-width: 1100px; margin: 0 auto; display: grid; gap: 14px; }
+h1 { font: 600 20px/1.2 var(--mono); letter-spacing: .02em; margin: 0; text-wrap: balance; }
+.alaotsikko { color: var(--himmea); font-size: 14px; margin: 2px 0 0; }
+#nakyma { position: relative; width: 100%; height: min(72vh, 680px); min-height: 360px; background: var(--nakyma);
+  border: 1px solid var(--viiva); border-radius: 10px; overflow: hidden; touch-action: none; }
+#nakyma canvas { display: block; width: 100%; height: 100%; }
+#lataus[hidden] { display: none; }
+#lataus { position: absolute; inset: 0; display: grid; place-items: center; color: var(--himmea); font: 14px var(--mono); }
+.paneeli { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; background: var(--pinta);
+  border: 1px solid var(--viiva); border-radius: 10px; padding: 12px 14px; }
+.paneeli label { display: flex; align-items: center; gap: 7px; cursor: pointer; user-select: none; }
+.nappi { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+input[type=range] { width: 160px; accent-color: var(--aksentti); }
+input[type=checkbox] { accent-color: var(--aksentti); width: 17px; height: 17px; }
+button { font: 600 14px var(--runko); color: var(--teksti); background: transparent; border: 1px solid var(--viiva);
+  border-radius: 7px; padding: 6px 12px; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--aksentti); outline-offset: 2px; }
+.arvo { font: 13px var(--mono); color: var(--himmea); min-width: 4.5em; font-variant-numeric: tabular-nums; }
+.mitat { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 6px 22px; font-size: 14px; }
+.mitat div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--viiva); padding-block: 5px; }
+.mitat span:last-child { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.vihje { color: var(--himmea); font-size: 13px; margin: 0; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Mutterikotelo 3D</h1>
+    <p class="alaotsikko">Näytöttömän RTK-kepin kahdeksankulmainen kotelo, malli 14.11.2026. Kierteet piirretty pohjareikinä.</p>
+  </header>
+
+  <div id="nakyma"><div id="lataus">Ladataan mallia…</div></div>
+
+  <div class="paneeli">
+    <label><input type="checkbox" id="n_ala" checked><span class="nappi" style="background:var(--ala)"></span>Alaosa</label>
+    <label><input type="checkbox" id="n_yla" checked><span class="nappi" style="background:var(--yla)"></span>Yläosa</label>
+    <label><input type="checkbox" id="n_komp" checked><span class="nappi" style="background:var(--komp)"></span>Komponentit</label>
+    <label><input type="checkbox" id="n_leikkaus">Leikkaus</label>
+    <label>Avaa <input type="range" id="avaa" min="0" max="120" value="0"><span class="arvo" id="avaa_arvo">0 mm</span></label>
+    <button id="alusta">Alkunäkymä</button>
+  </div>
+  <p class="vihje">Pyöritä vetämällä, zoomaa rullalla tai nipistämällä, siirrä kahdella sormella tai oikealla napilla.</p>
+
+  <section class="mitat" aria-label="Päämitat">
+    <div><span>Avainväli</span><span>225 mm</span></div>
+    <div><span>Korkeus</span><span>130 mm</span></div>
+    <div><span>Viisteet</span><span>45°, 35 mm</span></div>
+    <div><span>Seinämä / sauma</span><span>3 / 6,5 mm</span></div>
+    <div><span>Kalibrointipintoja</span><span>24</span></div>
+    <div><span>Kameran pinta</span><span>25° pystystä</span></div>
+    <div><span>Kiinnitys</span><span>8 × M4×40</span></div>
+    <div><span>Läpiviennit</span><span>M16 · M20 · M12</span></div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+<script>
+(function () {
+  const el = document.getElementById("nakyma");
+  const tyyli = getComputedStyle(document.documentElement);
+  const vari = (n) => new THREE.Color(tyyli.getPropertyValue(n).trim());
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.localClippingEnabled = true;
+  el.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const kamera = new THREE.PerspectiveCamera(35, 1, 1, 5000);
+  kamera.up.set(0, 0, 1);   // malli on z ylös (OpenSCAD)
+  const ohjaus = new THREE.OrbitControls(kamera, renderer.domElement);
+  ohjaus.enableDamping = true;
+  const alkuun = () => { kamera.position.set(380, -460, 330); ohjaus.target.set(0, 0, 60); ohjaus.update(); };
+  alkuun();
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x445046, 0.75));
+  const valo = new THREE.DirectionalLight(0xffffff, 0.75); valo.position.set(300, -400, 600); scene.add(valo);
+  const valo2 = new THREE.DirectionalLight(0xffffff, 0.3); valo2.position.set(-400, 300, -200); scene.add(valo2);
+
+  // Putki (JAP 20) läpi kotelon
+  const putki = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 420, 32, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0x5b6168, metalness: 0.2, roughness: 0.6, side: THREE.DoubleSide }));
+  putki.rotation.x = Math.PI / 2; putki.position.z = 65; scene.add(putki);
+
+  const leikkaus = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);   // poistaa y < 0 puoliskon
+  const materiaali = (v) => new THREE.MeshStandardMaterial({ color: v, roughness: 0.75, metalness: 0.0, side: THREE.DoubleSide });
+  const osat = {};
+  const lataa = (nimi, v, aseta) => new Promise((ok, virhe) => {
+    // Binääri-STL base64:nä JSONissa (julkaisu ei tarjoile .stl-tiedostoja).
+    fetch(nimi + ".json").then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).then((d) => {
+      const b = atob(d.stl), puskuri = new Uint8Array(b.length);
+      for (let i = 0; i < b.length; i++) puskuri[i] = b.charCodeAt(i);
+      const g = new THREE.STLLoader().parse(puskuri.buffer);
+      g.computeVertexNormals();
+      const m = new THREE.Mesh(g, materiaali(v));
+      aseta(m); scene.add(m); osat[nimi] = m; ok();
+    }).catch(virhe);
+  });
+  Promise.all([
+    lataa("ala", vari("--ala"), () => {}),
+    lataa("yla", vari("--yla"), (m) => { m.rotation.x = Math.PI; m.position.z = 130; }),   // STL on tulostusasennossa
+    lataa("komponentit", vari("--komp"), () => {}),
+  ]).then(() => { document.getElementById("lataus").hidden = true; paivita(); })
+    .catch(() => { document.getElementById("lataus").textContent = "Mallin lataus epäonnistui. Päivitä sivu."; });
+
+  function paivita() {
+    const auki = Number(document.getElementById("avaa").value);
+    document.getElementById("avaa_arvo").textContent = auki + " mm";
+    const leikattu = document.getElementById("n_leikkaus").checked;
+    if (osat.yla) osat.yla.position.z = 130 + auki;
+    [["ala", "n_ala"], ["yla", "n_yla"], ["komponentit", "n_komp"]].forEach(([o, id]) => {
+      if (!osat[o]) return;
+      osat[o].visible = document.getElementById(id).checked;
+      osat[o].material.clippingPlanes = leikattu && o !== "komponentit" ? [leikkaus] : [];
+      osat[o].material.needsUpdate = true;
+    });
+  }
+  ["n_ala", "n_yla", "n_komp", "n_leikkaus", "avaa"].forEach((id) => document.getElementById(id).addEventListener("input", paivita));
+  document.getElementById("alusta").addEventListener("click", alkuun);
+
+  function koko() {
+    const w = el.clientWidth, h = el.clientHeight;
+    renderer.setSize(w, h, false); kamera.aspect = w / h; kamera.updateProjectionMatrix();
+  }
+  new ResizeObserver(koko).observe(el); koko();
+  (function kierros() { ohjaus.update(); renderer.render(scene, kamera); requestAnimationFrame(kierros); })();
+})();
+</script>
+</body>
+</html>
